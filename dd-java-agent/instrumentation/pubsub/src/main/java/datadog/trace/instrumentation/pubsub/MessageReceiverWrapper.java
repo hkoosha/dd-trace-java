@@ -3,6 +3,7 @@ package datadog.trace.instrumentation.pubsub;
 import com.google.cloud.pubsub.v1.AckReplyConsumer;
 import com.google.cloud.pubsub.v1.MessageReceiver;
 import com.google.pubsub.v1.PubsubMessage;
+import datadog.trace.bootstrap.instrumentation.api.AgentScope;
 import datadog.trace.bootstrap.instrumentation.api.AgentSpan;
 import datadog.trace.bootstrap.instrumentation.api.AgentTracer;
 import datadog.trace.bootstrap.instrumentation.api.PathwayContext;
@@ -38,12 +39,14 @@ public final class MessageReceiverWrapper implements MessageReceiver {
 
     DECORATE.afterStart(span);
 
-    activateSpan(span);
+    AgentScope agentScope = activateSpan(span);
 
     try {
       this.delegate.receiveMessage(message, consumer);
     } finally {
       System.out.println("====================> after");
+      agentScope.close();
+      span.finish();
       closePrevious(true);
     }
   }
